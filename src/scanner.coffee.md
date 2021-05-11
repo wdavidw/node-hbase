@@ -24,6 +24,7 @@ rows and columns from HBase. Internally, it implements the native
       # @id = id or null
       @options = table: @options if typeof @options is 'string'
       @options.batch ?= 1000
+      @options.types ?= {}
       throw Error 'Missing required option "table"' unless @options.table
       @options.id = null
       @callback = null
@@ -82,7 +83,10 @@ Internal method to retrieve a batch of records.
             data.key = key
             data.column = utils.base64.decode cell.column, @client.options.encoding
             data.timestamp = cell.timestamp
-            data.$ = utils.base64.decode cell.$, @client.options.encoding
+            type = @options.types[data.column]
+            switch type
+                when "long" then data.$ = parseInt(utils.base64.decode(cell.$, "hex"), 16);
+                else data.$ = utils.base64.decode cell.$, @client.options.encoding
             cells.push data
         callback null, cells
 
